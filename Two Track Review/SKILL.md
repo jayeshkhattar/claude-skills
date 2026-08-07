@@ -1,6 +1,6 @@
 ---
 name: two-track-review
-description: Answer review and audit requests in two stacked versions — a full technical write-up, then a short plain-language recap. Use this skill whenever the user asks you to review, audit, critique, assess, or do a post-mortem on something (code, a PR, an architecture, a doc, a plan, a config, a design), or asks for a substantive walkthrough of how a non-trivial system works. Trigger it on phrases like "review this", "take a look at", "what do you think of this code", "audit this", "critique this design", "walk me through how this works". Use it even when the user does not explicitly ask for two versions — the two-version format is the default for these requests. Do NOT use it for routine conversational explanation ("what did you just change", "why did that fail", "explain this one line"), narrow factual questions, or any answer that would be under ~150 words on its own.
+description: Answer review and audit requests in two stacked versions — a full technical write-up, then a short plain-language recap. Use this skill whenever the user asks you to review, audit, critique, assess, or do a post-mortem on something (code, a PR, an architecture, a doc, a plan, a config, a design), or asks for a substantive walkthrough of how a non-trivial system works. Trigger it on phrases like "review this", "take a look at", "what do you think of this code", "audit this", "critique this design", "walk me through how this works". Use it even when the user does not explicitly ask for two versions — the two-version format is the default for these requests, and the skill also handles single-track requests, including a bare "1" (detailed only) or "2" (short only) at the end of the message. Do NOT use it for routine conversational explanation ("what did you just change", "why did that fail", "explain this one line"), narrow factual questions, or any answer that would be under ~150 words on its own.
 ---
 
 # Two-Track Review
@@ -17,9 +17,31 @@ The gate is **findings**, not topic. A finding is something the reader could act
 
 If a dedicated structured-findings tool is available and appropriate for the request, use it — it replaces Track 1. Still write Track 2 underneath it.
 
+## Mode selector
+
+Both tracks is the default. The user can override it two ways.
+
+**Trailing digit.** A bare `1` or `2` at the very end of the request selects a single track:
+
+| Ends with | Output |
+|---|---|
+| `1` | Track 1 only — the full technical version |
+| `2` | Track 2 only — the short plain-language version |
+| neither | both tracks, default format |
+
+The digit is a switch, not part of the request — do not treat it as content, do not echo it back, do not acknowledge it ("Short version, as requested:"). Just answer in the selected mode.
+
+Only read it as a mode flag when it is a **bare trailing token** — the last thing in the message, standing alone or after a comma or dash. `review the auth module 2` and `audit this — 1` are flags. `review this and fix bug 2`, `compare approach 1 and 2`, and `look at line 2` are not; the digit belongs to the sentence there. If it is genuinely ambiguous, default to both tracks — a wrong guess that drops the detailed version loses work the user wanted.
+
+**Natural language.** Phrases work the same way and need no digit: "just the short version", "skip the long one", "tl;dr", "just the 2-minute version" select Track 2; "full version only", "skip the recap", "just the detailed one" select Track 1. A standing preference stated earlier in the conversation holds until the user changes it, and an explicit digit on a given message overrides the standing preference for that message only.
+
+**In either single-track mode:** do the full analysis internally — the surviving track still has to be complete and accurate, and Track 2 is still written by distilling a detailed version you actually worked out. Output only the selected track's body, with no `## Detailed` header, no `---` divider, and no `## The 2-minute version` header — there is only one section, so it needs no label. Everything else about that track's content rules still applies.
+
+If the user later asks for the track you skipped, produce it then, on its own.
+
 ## Output format
 
-Use this exact structure and these exact headers:
+In the default both-tracks mode, use this exact structure and these exact headers:
 
 ```
 ## Detailed
